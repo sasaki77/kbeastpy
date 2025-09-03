@@ -4,12 +4,30 @@
         <enabled>true</enabled>
         <latching>false</latching>
         <annunciating>true</annunciating>
-        <description>Does not make tea</description>
+        <description>desc 1</description>
     </pv>
-    <pv name="TEST:PV2">
-        <enabled>true</enabled>
-        <latching>false</latching>
-        <annunciating>true</annunciating>
-        <description>Does not make tea</description>
-    </pv>
+    <component name="Group1">
+        <pv name="TEST:PV2">
+            <enabled>true</enabled>
+            <latching>false</latching>
+            <annunciating>true</annunciating>
+            <description>desc 2</description>
+        </pv>
+    </component>
+    <component name="Group2">
+        <component name="Group2-1">
+            <pv name="TEST:PV3">
+                <enabled>true</enabled>
+                <latching>false</latching>
+                <annunciating>true</annunciating>
+                <description>desc 3</description>
+            </pv>
+            <pv name="TEST:PV4">
+                <enabled>true</enabled>
+                <latching>false</latching>
+                <annunciating>true</annunciating>
+                <description>desc 4</description>
+            </pv>
+        </component>
+    </component>
 </config>
