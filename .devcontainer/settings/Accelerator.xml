@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf8'?>
+<config name="Accelerator">
+    <pv name="TEST:PV1">
+        <enabled>true</enabled>
+        <latching>false</latching>
+        <annunciating>true</annunciating>
+        <description>Does not make tea</description>
+    </pv>
+    <pv name="TEST:PV2">
+        <enabled>true</enabled>
+        <latching>false</latching>
+        <annunciating>true</annunciating>
+        <description>Does not make tea</description>
+    </pv>
+</config>

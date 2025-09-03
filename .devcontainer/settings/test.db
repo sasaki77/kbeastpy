@@ -1,0 +1,25 @@
+record(calc, "TEST:PV1") {
+    field(SCAN, "1 second")
+    field(CALC, "VAL>9?0:VAL+1")
+    field(HIHI, "9")
+    field(HIGH, "7")
+    field(LOW, "2")
+    field(LOLO, "4")
+    field(HHSV, "MAJOR")
+    field(HSV, "MINOR")
+    field(LSV, "MINOR")
+    field(LLSV, "MAJOR")
+}
+
+record(calc, "TEST:PV2") {
+    field(SCAN, "1 second")
+    field(CALC, "VAL>9?0:VAL+1")
+    field(HIHI, "9")
+    field(HIGH, "7")
+    field(LOW, "2")
+    field(LOLO, "4")
+    field(HHSV, "MAJOR")
+    field(HSV, "MINOR")
+    field(LSV, "MINOR")
+    field(LLSV, "MAJOR")
+}
