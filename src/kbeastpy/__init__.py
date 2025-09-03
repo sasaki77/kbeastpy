@@ -1,2 +1,3 @@
-def hello() -> str:
-    return "Hello from kbeastpy!"
+from .kbeast import KBeastClient
+
+__all__ = ["KBeastClient"]
