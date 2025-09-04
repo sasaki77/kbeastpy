@@ -20,7 +20,13 @@ class KBeastClient:
         consumer = Consumer(conf)
         topic = self.topics
 
-        metadata = consumer.list_topics(topic)
+        metadata = consumer.list_topics(topic, timeout=5)
+
+        if topic not in metadata.topics:
+            print(f"Topic '{topic}' not found.")
+            consumer.close()
+            return
+
         partitions = metadata.topics[topic].partitions
 
         consumer.subscribe([topic])
@@ -56,7 +62,7 @@ class KBeastClient:
             value = json.loads(record_value)
             alarm_list[key_str] = value
 
-            # print(f"{key_str}: {value}")
+            print(f"{key_str}: {value}")
 
         consumer.close()
 
