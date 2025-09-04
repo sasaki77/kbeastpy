@@ -29,28 +29,32 @@ class KBeastClient:
 
         consumer.subscribe([topic])
 
-        while True:
-            msg = consumer.poll(timeout=1.0)
+        try:
+            while True:
+                msg = consumer.poll(timeout=1.0)
 
-            if not self._is_valid_message(msg):
-                continue
+                if not self._is_valid_message(msg):
+                    continue
 
-            key, value = self._parse_key_value(msg)
+                key, value = self._parse_key_value(msg)
 
-            if key is None:
-                continue
+                if key is None:
+                    continue
 
-            msg_fmt = self._analyze_msg_format(key, value)
+                msg_fmt = self._analyze_msg_format(key, value)
 
-            if msg_fmt is None:
-                continue
+                if msg_fmt is None:
+                    continue
 
-            if msg_fmt == MsgFormat.STATE_LEAF or msg_fmt == MsgFormat.STATE_NODE:
-                key = key[7:]
-            else:
-                key = key[8:]
+                if msg_fmt == MsgFormat.STATE_LEAF or msg_fmt == MsgFormat.STATE_NODE:
+                    key = key[7:]
+                else:
+                    key = key[8:]
 
-            cb(msg_fmt, key, value)
+                cb(msg_fmt, key, value)
+        except StopIteration:
+            # For mock test
+            pass
 
     def fetch_alarm_list(self) -> dict:
         consumer = self._create_consumer(enable_eof=True)
@@ -158,5 +162,5 @@ class KBeastClient:
             if "delete" in value:
                 return MsgFormat.DELETE
             if "description" in value:
-                return MsgFormat.CONFIG_NODE
-            return MsgFormat.CONFIG_LEAF
+                return MsgFormat.CONFIG_LEAF
+            return MsgFormat.CONFIG_NODE
