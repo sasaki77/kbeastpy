@@ -1,9 +1,11 @@
 import json
+import threading
 import uuid
+from typing import Callable
 
 from confluent_kafka import Consumer, KafkaError
 
-from kbeastpy.msg import ConfigMsg
+from kbeastpy.msg import ConfigMsg, ConfigStateMsg, MsgFormat
 
 
 class KBeastClient:
@@ -11,8 +13,47 @@ class KBeastClient:
         self.topics = topics
         self.server = server
 
+    def start_listner(self, cb: Callable[[MsgFormat, str, ConfigStateMsg], None]):
+        thread = threading.Thread(target=self._listen, daemon=True, args=(cb,))
+        thread.start()
+
+    def _listen(self, cb: Callable[[MsgFormat, str, ConfigStateMsg], None]):
+        consumer = self._create_consumer(enable_eof=False)
+        topic = self.topics
+
+        metadata = consumer.list_topics(topic, timeout=5)
+        if topic not in metadata.topics:
+            print(f"Topic '{topic}' not found.")
+            consumer.close()
+            return {}
+
+        consumer.subscribe([topic])
+
+        while True:
+            msg = consumer.poll(timeout=1.0)
+
+            if not self._is_valid_message(msg):
+                continue
+
+            key, value = self._parse_key_value(msg)
+
+            if key is None:
+                continue
+
+            msg_fmt = self._analyze_msg_format(key, value)
+
+            if msg_fmt is None:
+                continue
+
+            if msg_fmt == MsgFormat.STATE_LEAF or msg_fmt == MsgFormat.STATE_NODE:
+                key = key[7:]
+            else:
+                key = key[8:]
+
+            cb(msg_fmt, key, value)
+
     def fetch_alarm_list(self) -> dict:
-        consumer = self._create_consumer()
+        consumer = self._create_consumer(enable_eof=True)
         topic = self.topics
 
         metadata = consumer.list_topics(topic, timeout=5)
@@ -47,6 +88,13 @@ class KBeastClient:
                 continue
 
             key, value = self._parse_key_value(msg)
+
+            if key is None:
+                continue
+
+            if not key.startswith("config"):
+                continue
+
             if key and value:
                 alarm_list[key] = value
                 print(f"{key}: {value}")
@@ -54,13 +102,13 @@ class KBeastClient:
         consumer.close()
         return self._build_nested_dict(alarm_list)
 
-    def _create_consumer(self):
+    def _create_consumer(self, enable_eof: bool):
         return Consumer(
             {
                 "bootstrap.servers": self.server,
                 "group.id": f"Alarm-{uuid.uuid4()}",
                 "auto.offset.reset": "beginning",
-                "enable.partition.eof": True,
+                "enable.partition.eof": enable_eof,
             }
         )
 
@@ -71,8 +119,6 @@ class KBeastClient:
 
     def _parse_key_value(self, msg) -> tuple[str | None, ConfigMsg]:
         key = msg.key().decode("utf-8")
-        if not key.startswith("config"):
-            return None, None
         value = json.loads(msg.value())
         return key, value
 
@@ -97,3 +143,20 @@ class KBeastClient:
                 else:
                     current = current.setdefault(k, {})
         return result
+
+    def _analyze_msg_format(self, key: str, value: ConfigStateMsg) -> MsgFormat | None:
+        if key.startswith("state"):
+            if value is None:
+                return None
+            if "message" in value:
+                return MsgFormat.STATE_LEAF
+            return MsgFormat.STATE_NODE
+
+        if key.startswith("config"):
+            if value is None:
+                return MsgFormat.CONFIG_NONE
+            if "delete" in value:
+                return MsgFormat.DELETE
+            if "description" in value:
+                return MsgFormat.CONFIG_NODE
+            return MsgFormat.CONFIG_LEAF

@@ -1,4 +1,16 @@
+from enum import Enum, auto
 from typing import Optional, TypedDict, Union
+
+
+class MsgFormat(Enum):
+    CONFIG_LEAF = auto()
+    CONFIG_NODE = auto()
+    CONFIG_NONE = auto()
+    DELETE = auto()
+    STATE_LEAF = auto()
+    STATE_NODE = auto()
+    COMMAND = auto()
+    TALK = auto()
 
 
 class ConfigData(TypedDict):
@@ -41,18 +53,18 @@ class TimeData(TypedDict):
 
 class StateLeafMsg(TypedDict):
     severity: str
-    latch: bool
     message: str
     value: str
     time: TimeData
     current_severity: str
     current_message: str
     mode: str
+    latch: Optional[bool]
 
 
 class StateNodeMsg(TypedDict):
     severity: str
-    mode: str
+    mode: Optional[str]
 
 
 class CommandMsg(TypedDict):
@@ -68,3 +80,6 @@ class TalkMsg(TypedDict):
 
 
 ConfigMsg = Union[ConfigLeafMsg, ConfigNodeMsg, DeleteMsg, None]
+ConfigStateMsg = Union[
+    ConfigLeafMsg, ConfigNodeMsg, DeleteMsg, StateLeafMsg, StateNodeMsg, None
+]
