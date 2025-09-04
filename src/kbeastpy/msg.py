@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional, TypedDict, Union
+from typing import NotRequired, TypedDict, Union
 
 
 class MsgFormat(Enum):
@@ -22,22 +22,22 @@ class ConfigLeafMsg(TypedDict):
     user: str
     host: str
     description: str
-    delay: Optional[int]
-    count: Optional[int]
-    filter: Optional[str]
-    guidance: Optional[list[ConfigData]]
-    displays: Optional[list[ConfigData]]
-    commands: Optional[list[ConfigData]]
-    actions: Optional[list[ConfigData]]
+    delay: NotRequired[int]
+    count: NotRequired[int]
+    filter: NotRequired[str]
+    guidance: NotRequired[list[ConfigData]]
+    displays: NotRequired[list[ConfigData]]
+    commands: NotRequired[list[ConfigData]]
+    actions: NotRequired[list[ConfigData]]
 
 
 class ConfigNodeMsg(TypedDict):
     user: str
     host: str
-    guidance: Optional[list[ConfigData]]
-    displays: Optional[list[ConfigData]]
-    commands: Optional[list[ConfigData]]
-    actions: Optional[list[ConfigData]]
+    guidance: NotRequired[list[ConfigData]]
+    displays: NotRequired[list[ConfigData]]
+    commands: NotRequired[list[ConfigData]]
+    actions: NotRequired[list[ConfigData]]
 
 
 class DeleteMsg(TypedDict):
@@ -59,12 +59,12 @@ class StateLeafMsg(TypedDict):
     current_severity: str
     current_message: str
     mode: str
-    latch: Optional[bool]
+    latch: NotRequired[bool]
 
 
 class StateNodeMsg(TypedDict):
     severity: str
-    mode: Optional[str]
+    mode: NotRequired[str]
 
 
 class CommandMsg(TypedDict):
