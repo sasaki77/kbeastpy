@@ -13,23 +13,23 @@ def cli():
 
 
 @cli.command()
-@click.option("--topics", "-t", type=str, default="Accelerator", help="Alarm topic")
+@click.option("--config", "-c", type=str, default="Accelerator", help="Alarm topic")
 @click.option(
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
-def list(topics, server):
-    c = KBeastClient(topics=topics, server=server)
+def list(config, server):
+    c = KBeastClient(config=config, server=server)
     alarms = c.fetch_alarm_list()
     click.echo(alarms)
 
 
 @cli.command()
-@click.option("--topics", "-t", type=str, default="Accelerator", help="Alarm topic")
+@click.option("--config", "-c", type=str, default="Accelerator", help="Alarm config")
 @click.option(
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
-def listen(topics, server):
-    c = KBeastClient(topics=topics, server=server)
+def listen(config, server):
+    c = KBeastClient(config=config, server=server)
     c.start_listner(cb=cb)
     try:
         while True:

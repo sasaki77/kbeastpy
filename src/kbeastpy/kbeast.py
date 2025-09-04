@@ -9,8 +9,8 @@ from kbeastpy.msg import ConfigMsg, ConfigStateMsg, MsgFormat
 
 
 class KBeastClient:
-    def __init__(self, topics: str = "Accelerator", server: str = "127.0.0.1:29092"):
-        self.topics = topics
+    def __init__(self, config: str = "Accelerator", server: str = "127.0.0.1:29092"):
+        self.config = config
         self.server = server
 
     def start_listner(self, cb: Callable[[MsgFormat, str, ConfigStateMsg], None]):
@@ -19,7 +19,7 @@ class KBeastClient:
 
     def _listen(self, cb: Callable[[MsgFormat, str, ConfigStateMsg], None]):
         consumer = self._create_consumer(enable_eof=False)
-        topic = self.topics
+        topic = self.config
 
         metadata = consumer.list_topics(topic, timeout=5)
         if topic not in metadata.topics:
@@ -58,7 +58,7 @@ class KBeastClient:
 
     def fetch_alarm_list(self) -> dict:
         consumer = self._create_consumer(enable_eof=True)
-        topic = self.topics
+        topic = self.config
 
         metadata = consumer.list_topics(topic, timeout=5)
         if topic not in metadata.topics:
@@ -101,7 +101,6 @@ class KBeastClient:
 
             if key and value:
                 alarm_list[key] = value
-                print(f"{key}: {value}")
 
         consumer.close()
         return self._build_nested_dict(alarm_list)
