@@ -1,8 +1,5 @@
-import json
-from unittest.mock import MagicMock
-
 import pytest
-from confluent_kafka import KafkaError
+from utils import config_leaf_elem, config_node_elem, delete_elem, eof_message
 
 from kbeastpy import KBeastClient
 
@@ -31,67 +28,32 @@ def mock_consumer(mocker, request):
     [
         (
             [
-                MagicMock(
-                    key=lambda: b"config:/Accelerator/alarm1",
-                    value=lambda: json.dumps(
-                        {"user": "root", "host": "test", "description": "Alarm 1"}
-                    ).encode("utf-8"),
-                    error=lambda: None,
+                config_leaf_elem(
+                    b"config:/Accelerator/alarm1",
+                    {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
-                MagicMock(
-                    key=lambda: b"config:/Accelerator/alarm2",
-                    value=lambda: json.dumps(
-                        {"user": "root", "host": "test", "description": "Alarm 2"}
-                    ).encode("utf-8"),
-                    error=lambda: None,
+                config_leaf_elem(
+                    b"config:/Accelerator/alarm2",
+                    {"user": "root", "host": "test", "description": "Alarm 2"},
                 ),
-                MagicMock(
-                    key=lambda: b"config:/Accelerator/alarm2",
-                    value=lambda: json.dumps(
-                        {"user": "root", "host": "test", "delete": "Deleting"}
-                    ).encode("utf-8"),
-                    error=lambda: None,
-                ),
+                delete_elem(b"config:/Accelerator/alarm2"),
                 # EOF messages for 2 partitions
-                MagicMock(
-                    error=lambda: MagicMock(code=lambda: KafkaError._PARTITION_EOF)
-                ),
-                MagicMock(
-                    error=lambda: MagicMock(code=lambda: KafkaError._PARTITION_EOF)
-                ),
+                eof_message(),
+                eof_message(),
             ],
             {"alarm1": {"user": "root", "host": "test", "description": "Alarm 1"}},
         ),
         (
             [
-                MagicMock(
-                    key=lambda: b"config:/Accelerator/Group2",
-                    value=lambda: json.dumps({"user": "root", "host": "test"}).encode(
-                        "utf-8"
-                    ),
-                    error=lambda: None,
+                config_node_elem(b"config:/Accelerator/Group2"),
+                config_leaf_elem(
+                    b"config:/Accelerator/Group1/alarm1",
+                    {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
-                MagicMock(
-                    key=lambda: b"config:/Accelerator/Group1/alarm1",
-                    value=lambda: json.dumps(
-                        {"user": "root", "host": "test", "description": "Alarm 1"}
-                    ).encode("utf-8"),
-                    error=lambda: None,
-                ),
-                MagicMock(
-                    key=lambda: b"config:/Accelerator/Group1",
-                    value=lambda: json.dumps({"user": "root", "host": "test"}).encode(
-                        "utf-8"
-                    ),
-                    error=lambda: None,
-                ),
+                config_node_elem(b"config:/Accelerator/Group1"),
                 # EOF messages for 2 partitions
-                MagicMock(
-                    error=lambda: MagicMock(code=lambda: KafkaError._PARTITION_EOF)
-                ),
-                MagicMock(
-                    error=lambda: MagicMock(code=lambda: KafkaError._PARTITION_EOF)
-                ),
+                eof_message(),
+                eof_message(),
             ],
             {
                 "Group1": {
