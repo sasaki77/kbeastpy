@@ -33,21 +33,23 @@ def mock_consumer(mocker, request):
             [
                 MagicMock(
                     key=lambda: b"config:/Accelerator/alarm1",
-                    value=lambda: json.dumps({"description": "Alarm 1"}).encode(
-                        "utf-8"
-                    ),
+                    value=lambda: json.dumps(
+                        {"user": "root", "host": "test", "description": "Alarm 1"}
+                    ).encode("utf-8"),
                     error=lambda: None,
                 ),
                 MagicMock(
                     key=lambda: b"config:/Accelerator/alarm2",
-                    value=lambda: json.dumps({"description": "Alarm 2"}).encode(
-                        "utf-8"
-                    ),
+                    value=lambda: json.dumps(
+                        {"user": "root", "host": "test", "description": "Alarm 2"}
+                    ).encode("utf-8"),
                     error=lambda: None,
                 ),
                 MagicMock(
                     key=lambda: b"config:/Accelerator/alarm2",
-                    value=lambda: json.dumps({"delete": "Deleting"}).encode("utf-8"),
+                    value=lambda: json.dumps(
+                        {"user": "root", "host": "test", "delete": "Deleting"}
+                    ).encode("utf-8"),
                     error=lambda: None,
                 ),
                 # EOF messages for 2 partitions
@@ -58,12 +60,12 @@ def mock_consumer(mocker, request):
                     error=lambda: MagicMock(code=lambda: KafkaError._PARTITION_EOF)
                 ),
             ],
-            {"alarm1": {"description": "Alarm 1"}},
+            {"alarm1": {"user": "root", "host": "test", "description": "Alarm 1"}},
         ),
         (
             [
                 MagicMock(
-                    key=lambda: b"config:/Accelerator/Group1",
+                    key=lambda: b"config:/Accelerator/Group2",
                     value=lambda: json.dumps({"user": "root", "host": "test"}).encode(
                         "utf-8"
                     ),
@@ -71,7 +73,14 @@ def mock_consumer(mocker, request):
                 ),
                 MagicMock(
                     key=lambda: b"config:/Accelerator/Group1/alarm1",
-                    value=lambda: json.dumps({"description": "Alarm 1"}).encode(
+                    value=lambda: json.dumps(
+                        {"user": "root", "host": "test", "description": "Alarm 1"}
+                    ).encode("utf-8"),
+                    error=lambda: None,
+                ),
+                MagicMock(
+                    key=lambda: b"config:/Accelerator/Group1",
+                    value=lambda: json.dumps({"user": "root", "host": "test"}).encode(
                         "utf-8"
                     ),
                     error=lambda: None,
@@ -84,7 +93,16 @@ def mock_consumer(mocker, request):
                     error=lambda: MagicMock(code=lambda: KafkaError._PARTITION_EOF)
                 ),
             ],
-            {"Group1": {"alarm1": {"description": "Alarm 1"}}},
+            {
+                "Group1": {
+                    "alarm1": {
+                        "user": "root",
+                        "host": "test",
+                        "description": "Alarm 1",
+                    },
+                },
+                "Group2": {},
+            },
         ),
     ],
     indirect=["mock_consumer"],
