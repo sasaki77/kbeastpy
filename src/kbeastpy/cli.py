@@ -2,7 +2,7 @@ import time
 
 import click
 
-from kbeastpy import KBeastClient
+from kbeastpy import KBeastClient, OffsetType
 from kbeastpy.msg import Msg, MsgFormat
 
 
@@ -29,11 +29,13 @@ def list(config, server):
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
 @click.option("--primary", "-p", type=bool, default=True, help="Enale primary topic")
-@click.option("--command", "-c", type=bool, default=False, help="Enale command topic")
+@click.option("--command", "-m", type=bool, default=False, help="Enale command topic")
 @click.option("--talk", "-t", type=bool, default=False, help="Enale talk topic")
-def listen(config, server, primary, command, talk):
+@click.option("--latest", "-l", type=bool, default=False, help="Set offset latest")
+def listen(config, server, primary, command, talk, latest):
     c = KBeastClient(config=config, server=server)
-    c.start_listner(cb=cb, primary=primary, command=command, talk=talk)
+    offset = OffsetType.LATEST if latest else OffsetType.EARLIEST
+    c.start_listner(cb=cb, offset=offset, primary=primary, command=command, talk=talk)
     try:
         while True:
             time.sleep(1)

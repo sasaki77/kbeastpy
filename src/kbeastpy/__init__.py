@@ -1,3 +1,3 @@
-from .kbeast import KBeastClient
+from .kbeast import KBeastClient, OffsetType
 
-__all__ = ["KBeastClient"]
+__all__ = ["KBeastClient", "OffsetType"]

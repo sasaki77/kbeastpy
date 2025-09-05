@@ -1,12 +1,18 @@
 import json
 import threading
 import uuid
+from enum import StrEnum
 from functools import lru_cache
 from typing import Callable
 
 from confluent_kafka import Consumer, KafkaError
 
 from kbeastpy.msg import ConfigMsg, Msg, MsgFormat
+
+
+class OffsetType(StrEnum):
+    EARLIEST = "earliest"
+    LATEST = "latest"
 
 
 class KBeastClient:
@@ -17,23 +23,25 @@ class KBeastClient:
     def start_listner(
         self,
         cb: Callable[[MsgFormat, str, Msg], None],
+        offset: OffsetType = OffsetType.EARLIEST,
         primary: bool = True,
         command: bool = False,
         talk: bool = False,
     ):
         thread = threading.Thread(
-            target=self._listen, daemon=True, args=(cb, primary, command, talk)
+            target=self._listen, daemon=True, args=(cb, offset, primary, command, talk)
         )
         thread.start()
 
     def _listen(
         self,
         cb: Callable[[MsgFormat, str, Msg], None],
+        offset: OffsetType = OffsetType.EARLIEST,
         primary: bool = True,
         command: bool = False,
         talk: bool = False,
     ):
-        consumer = self._create_consumer(enable_eof=False)
+        consumer = self._create_consumer(enable_eof=False, offset=offset)
         topics = self._get_topic_names(self.config, primary, command, talk)
 
         if len(topics) == 0:
@@ -121,12 +129,14 @@ class KBeastClient:
         consumer.close()
         return self._build_nested_dict(alarm_list)
 
-    def _create_consumer(self, enable_eof: bool):
+    def _create_consumer(
+        self, enable_eof: bool, offset: OffsetType = OffsetType.EARLIEST
+    ):
         return Consumer(
             {
                 "bootstrap.servers": self.server,
                 "group.id": f"Alarm-{uuid.uuid4()}",
-                "auto.offset.reset": "beginning",
+                "auto.offset.reset": str(offset),
                 "enable.partition.eof": enable_eof,
             }
         )
