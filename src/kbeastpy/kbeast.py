@@ -1,11 +1,12 @@
 import json
 import threading
 import uuid
+from functools import lru_cache
 from typing import Callable
 
 from confluent_kafka import Consumer, KafkaError
 
-from kbeastpy.msg import ConfigMsg, ConfigStateMsg, MsgFormat
+from kbeastpy.msg import ConfigMsg, Msg, MsgFormat
 
 
 class KBeastClient:
@@ -13,21 +14,39 @@ class KBeastClient:
         self.config = config
         self.server = server
 
-    def start_listner(self, cb: Callable[[MsgFormat, str, ConfigStateMsg], None]):
-        thread = threading.Thread(target=self._listen, daemon=True, args=(cb,))
+    def start_listner(
+        self,
+        cb: Callable[[MsgFormat, str, Msg], None],
+        primary: bool = True,
+        command: bool = False,
+        talk: bool = False,
+    ):
+        thread = threading.Thread(
+            target=self._listen, daemon=True, args=(cb, primary, command, talk)
+        )
         thread.start()
 
-    def _listen(self, cb: Callable[[MsgFormat, str, ConfigStateMsg], None]):
+    def _listen(
+        self,
+        cb: Callable[[MsgFormat, str, Msg], None],
+        primary: bool = True,
+        command: bool = False,
+        talk: bool = False,
+    ):
         consumer = self._create_consumer(enable_eof=False)
-        topic = self.config
+        topics = self._get_topic_names(self.config, primary, command, talk)
 
-        metadata = consumer.list_topics(topic, timeout=5)
-        if topic not in metadata.topics:
-            print(f"Topic '{topic}' not found.")
-            consumer.close()
-            return {}
+        if len(topics) == 0:
+            return
 
-        consumer.subscribe([topic])
+        metadata = consumer.list_topics(timeout=5)
+        for topic in topics:
+            if topic not in metadata.topics:
+                print(f"Topic '{topic}' not found.")
+                consumer.close()
+                return {}
+
+        consumer.subscribe(topics)
 
         try:
             while True:
@@ -46,12 +65,9 @@ class KBeastClient:
                 if msg_fmt is None:
                     continue
 
-                if msg_fmt == MsgFormat.STATE_LEAF or msg_fmt == MsgFormat.STATE_NODE:
-                    key = key[7:]
-                else:
-                    key = key[8:]
+                stripped_key = self._strip_type_prefix(key, msg_fmt)
 
-                cb(msg_fmt, key, value)
+                cb(msg_fmt, stripped_key, value)
         except StopIteration:
             # For mock test
             pass
@@ -147,7 +163,7 @@ class KBeastClient:
                     current = current.setdefault(k, {})
         return result
 
-    def _analyze_msg_format(self, key: str, value: ConfigStateMsg) -> MsgFormat | None:
+    def _analyze_msg_format(self, key: str, value: Msg) -> MsgFormat | None:
         if key.startswith("state"):
             if value is None:
                 return None
@@ -163,3 +179,49 @@ class KBeastClient:
             if "description" in value:
                 return MsgFormat.CONFIG_LEAF
             return MsgFormat.CONFIG_NODE
+
+        if key.startswith("command"):
+            return MsgFormat.COMMAND
+
+        if key.startswith("talk"):
+            return MsgFormat.TALK
+
+        return None
+
+    def _get_topic_names(
+        self, config: str, primary: bool, command: bool, talk: bool
+    ) -> list[str]:
+        names = []
+
+        if primary:
+            names.append(self.config)
+        if command:
+            names.append(f"{self.config}Command")
+        if talk:
+            names.append(f"{self.config}Talk")
+
+        return names
+
+    def _strip_type_prefix(self, key, msg_fmt):
+        length_dit = self._get_prefix_length_dict()
+        length = length_dit[msg_fmt]
+        return key[length:]
+
+    @lru_cache
+    def _get_prefix_length_dict(self):
+        config_len = len("config:/")
+        delete_len = len("delete:/")
+        state_len = len("state:/")
+        command_len = len("command:/")
+        talk_len = len("talk:/")
+
+        return {
+            MsgFormat.CONFIG_LEAF: config_len,
+            MsgFormat.CONFIG_NODE: config_len,
+            MsgFormat.CONFIG_NONE: config_len,
+            MsgFormat.DELETE: delete_len,
+            MsgFormat.STATE_LEAF: state_len,
+            MsgFormat.STATE_NODE: state_len,
+            MsgFormat.COMMAND: command_len,
+            MsgFormat.TALK: talk_len,
+        }

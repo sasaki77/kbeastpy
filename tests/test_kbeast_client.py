@@ -1,10 +1,19 @@
 import time
 
 import pytest
-from utils import config_leaf_elem, config_node_elem, delete_elem, eof_message
+from utils import (
+    command_elem,
+    config_leaf_elem,
+    config_node_elem,
+    delete_elem,
+    eof_message,
+    state_leaf_elem,
+    state_node_elem,
+    talk_elem,
+)
 
 from kbeastpy import KBeastClient
-from kbeastpy.msg import ConfigStateMsg, MsgFormat
+from kbeastpy.msg import Msg, MsgFormat
 
 
 @pytest.fixture
@@ -32,14 +41,14 @@ def mock_consumer(mocker, request):
         (
             [
                 config_leaf_elem(
-                    b"config:/Accelerator/alarm1",
+                    "Accelerator/alarm1",
                     {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
                 config_leaf_elem(
-                    b"config:/Accelerator/alarm2",
+                    "Accelerator/alarm2",
                     {"user": "root", "host": "test", "description": "Alarm 2"},
                 ),
-                delete_elem(b"config:/Accelerator/alarm2"),
+                delete_elem("Accelerator/alarm2"),
                 # EOF messages for 2 partitions
                 eof_message(),
                 eof_message(),
@@ -48,12 +57,12 @@ def mock_consumer(mocker, request):
         ),
         (
             [
-                config_node_elem(b"config:/Accelerator/Group2"),
+                config_node_elem("Accelerator/Group2"),
                 config_leaf_elem(
-                    b"config:/Accelerator/Group1/alarm1",
+                    "Accelerator/Group1/alarm1",
                     {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
-                config_node_elem(b"config:/Accelerator/Group1"),
+                config_node_elem("Accelerator/Group1"),
                 # EOF messages for 2 partitions
                 eof_message(),
                 eof_message(),
@@ -85,15 +94,29 @@ def test_fetch_alarm_list(mock_consumer, expected):
         (
             [
                 config_leaf_elem(
-                    b"config:/Accelerator/alarm1",
+                    "Accelerator/alarm1",
                     {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
-                config_node_elem(b"config:/Accelerator/Group1"),
+                config_node_elem("Accelerator/Group1"),
                 config_leaf_elem(
-                    b"config:/Accelerator/Group1/alarm2",
+                    "Accelerator/Group1/alarm2",
                     {"user": "root", "host": "test", "description": "Alarm 2"},
                 ),
-                delete_elem(b"config:/Accelerator/alarm2"),
+                state_leaf_elem(
+                    "Accelerator/alarm1",
+                    {
+                        "severity": "MAJOR",
+                        "message": "LOLO_ALARM",
+                        "value": "0.0",
+                        "time": {"seconds": 1757033473, "nano": 838751329},
+                        "current_severity": "MAJOR",
+                        "current_message": "LOLO_ALARM",
+                    },
+                ),
+                state_node_elem("Accelerator/Group1", "MAJOR"),
+                talk_elem("Accelerator/alarm1", "MAJOR", "Alarm 1"),
+                command_elem("Accelerator/Group1/alarm2"),
+                delete_elem("Accelerator/Group1/alarm2"),
             ],
             [
                 {
@@ -112,8 +135,43 @@ def test_fetch_alarm_list(mock_consumer, expected):
                     "value": {"user": "root", "host": "test", "description": "Alarm 2"},
                 },
                 {
+                    "msg_fmt": MsgFormat.STATE_LEAF,
+                    "key": "Accelerator/alarm1",
+                    "value": {
+                        "severity": "MAJOR",
+                        "message": "LOLO_ALARM",
+                        "value": "0.0",
+                        "time": {"seconds": 1757033473, "nano": 838751329},
+                        "current_severity": "MAJOR",
+                        "current_message": "LOLO_ALARM",
+                    },
+                },
+                {
+                    "msg_fmt": MsgFormat.STATE_NODE,
+                    "key": "Accelerator/Group1",
+                    "value": {"severity": "MAJOR"},
+                },
+                {
+                    "msg_fmt": MsgFormat.TALK,
+                    "key": "Accelerator/alarm1",
+                    "value": {
+                        "standout": False,
+                        "severity": "MAJOR",
+                        "talk": "Alarm 1",
+                    },
+                },
+                {
+                    "msg_fmt": MsgFormat.COMMAND,
+                    "key": "Accelerator/Group1/alarm2",
+                    "value": {
+                        "user": "user name",
+                        "host": "host name",
+                        "command": "acknowledge",
+                    },
+                },
+                {
                     "msg_fmt": MsgFormat.DELETE,
-                    "key": "Accelerator/alarm2",
+                    "key": "Accelerator/Group1/alarm2",
                     "value": {"user": "root", "host": "test", "delete": "Deleting"},
                 },
             ],
@@ -124,7 +182,7 @@ def test_fetch_alarm_list(mock_consumer, expected):
 def test_listener(mock_consumer, expected):
     data = []
 
-    def cb(msg_fmt: MsgFormat, key: str, value: ConfigStateMsg):
+    def cb(msg_fmt: MsgFormat, key: str, value: Msg):
         data.append((msg_fmt, key, value))
 
     client = KBeastClient()

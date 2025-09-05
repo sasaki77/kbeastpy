@@ -58,7 +58,7 @@ class StateLeafMsg(TypedDict):
     time: TimeData
     current_severity: str
     current_message: str
-    mode: str
+    mode: NotRequired[str]
     latch: NotRequired[bool]
 
 
@@ -82,4 +82,15 @@ class TalkMsg(TypedDict):
 ConfigMsg = Union[ConfigLeafMsg, ConfigNodeMsg, DeleteMsg, None]
 ConfigStateMsg = Union[
     ConfigLeafMsg, ConfigNodeMsg, DeleteMsg, StateLeafMsg, StateNodeMsg, None
+]
+
+Msg = Union[
+    ConfigLeafMsg,
+    ConfigNodeMsg,
+    DeleteMsg,
+    StateLeafMsg,
+    StateNodeMsg,
+    CommandMsg,
+    TalkMsg,
+    None,
 ]
