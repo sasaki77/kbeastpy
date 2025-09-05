@@ -28,6 +28,12 @@
                 <annunciating>true</annunciating>
                 <description>desc 4</description>
             </pv>
+            <pv name="TEST:INVALID">
+                <enabled>true</enabled>
+                <latching>false</latching>
+                <annunciating>true</annunciating>
+                <description>desc invalid</description>
+            </pv>
         </component>
     </component>
 </config>

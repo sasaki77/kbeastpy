@@ -1,8 +1,10 @@
 import time
+from datetime import datetime
+from pprint import pprint
 
 import click
 
-from kbeastpy import KBeastClient, OffsetType
+from kbeastpy import KBeastClient, LogReader, OffsetType
 from kbeastpy.msg import Msg, MsgFormat
 
 
@@ -59,6 +61,30 @@ def cb(msg_fmt: MsgFormat, key: str, value: Msg):
     t = cb_prefix.get(msg_fmt, None)
 
     click.echo(f"{t} -> {key}: {value}")
+
+
+@cli.command()
+@click.option("--config", "-c", type=str, default="Accelerator", help="Alarm topic")
+@click.option(
+    "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
+)
+@click.option("--start", "-t", type=str, help="Start of search range", required=True)
+@click.option("--end", "-e", type=str, help="End of search range")
+@click.option("--systems", "-g", type=str, default=None, help="Systems")
+@click.option("--pv", "-p", type=str, default=None, help="PV name pattern")
+@click.option("--severity", "-r", type=str, default=None, help="Severity list")
+def log(config, server, start, end, systems, pv, severity):
+    _end = end
+    if _end is None:
+        now = datetime.now()
+        _end = now.strftime("%Y-%m-%d %H:%M:%S.000")
+
+    system_list = systems.split(",") if systems else None
+    severity_list = severity.split(",") if severity else None
+    r = LogReader(config=config, server=server)
+    data = r.fetch_log(start, _end, system_list, pv, severity_list)
+
+    pprint(data)
 
 
 if __name__ == "__main__":
