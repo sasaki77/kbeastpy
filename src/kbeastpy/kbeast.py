@@ -2,13 +2,25 @@ import json
 import threading
 import uuid
 from functools import lru_cache
-from typing import Callable, Literal
+from typing import Callable, Literal, TypedDict, Union
 
-from confluent_kafka import Consumer, KafkaError
+from confluent_kafka import Consumer, KafkaError, Producer
 
-from kbeastpy.msg import ConfigMsg, Msg, MsgFormat
+from kbeastpy.msg import (
+    ConfigLeafMsg,
+    ConfigMsg,
+    ConfigNodeMsg,
+    DeleteMsg,
+    Msg,
+    MsgFormat,
+)
 
 OffsetType = Literal["earliest", "latest"]
+
+
+class AlarmConfigArg(TypedDict):
+    path: str
+    data: Union[ConfigLeafMsg, ConfigNodeMsg]
 
 
 class KBeastClient:
@@ -125,6 +137,65 @@ class KBeastClient:
         consumer.close()
         return self._build_nested_dict(alarm_list)
 
+    def update_alarm_config(self, configs: list[AlarmConfigArg]):
+        producer = self._create_producer()
+        topic = self.config
+
+        for config in configs:
+            key = f"config:/{self.config}/{config['path']}"
+            value = json.dumps(config["data"])
+
+            try:
+                producer.produce(
+                    topic, key=key, value=value, callback=self._produce_delivery_report
+                )
+            except BufferError:
+                producer.poll(1)  # wait buffer becomes available
+                producer.produce(
+                    topic, key=key, value=value, callback=self._produce_delivery_report
+                )
+            producer.poll(0)
+
+        producer.flush()
+
+    def delete(self, paths: list[str], user: str, host: str):
+        producer = self._create_producer()
+        topic = self.config
+
+        msg: DeleteMsg = {"user": user, "host": host, "delete": "Deleting"}
+        value = json.dumps(msg)
+
+        for path in paths:
+            key = f"config:/{self.config}/{path}"
+
+            try:
+                producer.produce(
+                    topic, key=key, value=value, callback=self._produce_delivery_report
+                )
+            except BufferError:
+                producer.poll(1)  # wait buffer becomes available
+                producer.produce(
+                    topic, key=key, value=value, callback=self._produce_delivery_report
+                )
+            producer.poll(0)
+
+            try:
+                producer.produce(
+                    topic, key=key, value=None, callback=self._produce_delivery_report
+                )
+            except BufferError:
+                producer.poll(1)  # wait buffer becomes available
+                producer.produce(
+                    topic, key=key, value=None, callback=self._produce_delivery_report
+                )
+            producer.poll(0)
+
+        producer.flush()
+
+    def _produce_delivery_report(self, err, msg):
+        if err is not None:
+            print(f"Delivery failed: {err}")
+
     def _create_consumer(self, enable_eof: bool, offset: OffsetType = "earliest"):
         return Consumer(
             {
@@ -132,6 +203,13 @@ class KBeastClient:
                 "group.id": f"Alarm-{uuid.uuid4()}",
                 "auto.offset.reset": str(offset),
                 "enable.partition.eof": enable_eof,
+            }
+        )
+
+    def _create_producer(self):
+        return Producer(
+            {
+                "bootstrap.servers": self.server,
             }
         )
 

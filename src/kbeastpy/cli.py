@@ -1,10 +1,12 @@
 import time
 from datetime import datetime
 from pprint import pprint
+from typing import List
 
 import click
 
 from kbeastpy import KBeastClient, LogReader
+from kbeastpy.kbeast import AlarmConfigArg
 from kbeastpy.msg import Msg, MsgFormat
 
 
@@ -23,6 +25,45 @@ def list(config, server):
     c = KBeastClient(config=config, server=server)
     alarms = c.fetch_alarm_list()
     click.echo(alarms)
+
+
+@cli.command()
+@click.option("--config", "-c", type=str, default="Accelerator", help="Alarm topic")
+@click.option(
+    "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
+)
+@click.option("--path", "-p", type=str, required=True, help="Alarm path")
+@click.option("--user", "-u", type=str, required=True, help="User")
+@click.option("--host", "-o", type=str, required=True, help="Host")
+@click.option("--desc", "-d", type=str, required=True, help="Description")
+@click.option("--enabled", "-e", type=bool, default=True, help="Enabled")
+def update(config, server, path, user, host, desc, enabled):
+    c = KBeastClient(config=config, server=server)
+    configs: List[AlarmConfigArg] = [
+        {
+            "path": path,
+            "data": {
+                "user": user,
+                "host": host,
+                "description": desc,
+                "enabled": enabled,
+            },
+        }
+    ]
+    c.update_alarm_config(configs)
+
+
+@cli.command()
+@click.option("--config", "-c", type=str, default="Accelerator", help="Alarm topic")
+@click.option(
+    "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
+)
+@click.option("--path", "-p", type=str, required=True, help="Alarm path")
+@click.option("--user", "-u", type=str, required=True, help="User")
+@click.option("--host", "-o", type=str, required=True, help="Host")
+def delete(config, server, path, user, host):
+    c = KBeastClient(config=config, server=server)
+    c.delete([path], user, host)
 
 
 @cli.command()
