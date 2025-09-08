@@ -1,3 +1,4 @@
+import json
 import time
 
 import pytest
@@ -13,6 +14,7 @@ from utils import (
 )
 
 from kbeastpy import KBeastClient
+from kbeastpy.kbeast import AlarmConfigArg
 from kbeastpy.msg import Msg, MsgFormat
 
 
@@ -33,6 +35,110 @@ def mock_consumer(mocker, request):
     mock_consumer_instance.poll.side_effect = messages + [None] * 5
 
     return mocker.patch("kbeastpy.kbeast.Consumer", return_value=mock_consumer_instance)
+
+
+@pytest.fixture
+def mock_producer(mocker):
+    # Mock for Consumer class
+    mock = mocker.MagicMock()
+
+    mock.produce.return_value = None
+    mock.flush.return_value = None
+
+    # Mock for poll
+    mock.poll.side_effect = None
+
+    return (mocker.patch("kbeastpy.kbeast.Producer", return_value=mock), mock)
+
+
+def test_update(mock_producer):
+    _, mock = mock_producer
+    configs: list[AlarmConfigArg] = [
+        {
+            "path": "PV1",
+            "data": {
+                "user": "user",
+                "host": "host",
+                "description": "desc",
+                "enabled": True,
+            },
+        },
+        {
+            "path": "Group1",
+            "data": {
+                "user": "user",
+                "host": "host",
+            },
+        },
+    ]
+
+    client = KBeastClient()
+    client.update_alarm_config(configs)
+
+    assert mock.produce.call_count == 2
+
+    calls = mock.produce.call_args_list
+
+    call1_args = calls[0][0]
+    call1_kargs = calls[0][1]
+    assert call1_args == ("Accelerator",)
+    assert call1_kargs["key"] == "config:/Accelerator/PV1"
+    assert call1_kargs["value"] == json.dumps(configs[0]["data"])
+
+    call2_args = calls[1][0]
+    call2_kargs = calls[1][1]
+    assert call2_args == ("Accelerator",)
+    assert call2_kargs["key"] == "config:/Accelerator/Group1"
+    assert call2_kargs["value"] == json.dumps(configs[1]["data"])
+
+
+def test_delete(mock_producer):
+    _, mock = mock_producer
+    user = "user"
+    host = "host"
+    paths = ["PV1", "PV2"]
+
+    client = KBeastClient()
+    client.delete(paths, user, host)
+
+    assert mock.produce.call_count == 4
+
+    calls = mock.produce.call_args_list
+
+    # delete PV1
+    ## 1st delete message for PV1
+    call1_args = calls[0][0]
+    call1_kargs = calls[0][1]
+    assert call1_args == ("Accelerator",)
+    assert call1_kargs["key"] == "config:/Accelerator/PV1"
+    assert call1_kargs["value"] == json.dumps(
+        {"user": "user", "host": "host", "delete": "Deleting"}
+    )
+
+    ## 2nd delete message for PV1
+    call2_args = calls[1][0]
+    call2_kargs = calls[1][1]
+    assert call2_args == ("Accelerator",)
+    assert call2_kargs["key"] == "config:/Accelerator/PV1"
+    assert call2_kargs["value"] is None
+
+    # delete PV2
+    ## 1st delete message for PV2
+    call3_args = calls[2][0]
+    call3_kargs = calls[2][1]
+    assert call3_args == ("Accelerator",)
+    assert call3_kargs["key"] == "config:/Accelerator/PV2"
+    assert call3_kargs["value"] == json.dumps(
+        {"user": "user", "host": "host", "delete": "Deleting"}
+    )
+
+    ## 2nd delete message for PV2
+    call2_args = calls[1][0]
+    call4_args = calls[3][0]
+    call4_kargs = calls[3][1]
+    assert call4_args == ("Accelerator",)
+    assert call4_kargs["key"] == "config:/Accelerator/PV2"
+    assert call4_kargs["value"] is None
 
 
 @pytest.mark.parametrize(
