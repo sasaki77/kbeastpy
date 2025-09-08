@@ -22,6 +22,7 @@ class ConfigLeafMsg(TypedDict):
     user: str
     host: str
     description: str
+    enabled: NotRequired[bool]
     delay: NotRequired[int]
     count: NotRequired[int]
     filter: NotRequired[str]
