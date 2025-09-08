@@ -1,18 +1,14 @@
 import json
 import threading
 import uuid
-from enum import StrEnum
 from functools import lru_cache
-from typing import Callable
+from typing import Callable, Literal
 
 from confluent_kafka import Consumer, KafkaError
 
 from kbeastpy.msg import ConfigMsg, Msg, MsgFormat
 
-
-class OffsetType(StrEnum):
-    EARLIEST = "earliest"
-    LATEST = "latest"
+OffsetType = Literal["earliest", "latest"]
 
 
 class KBeastClient:
@@ -23,7 +19,7 @@ class KBeastClient:
     def start_listner(
         self,
         cb: Callable[[MsgFormat, str, Msg], None],
-        offset: OffsetType = OffsetType.EARLIEST,
+        offset: OffsetType = "earliest",
         primary: bool = True,
         command: bool = False,
         talk: bool = False,
@@ -36,7 +32,7 @@ class KBeastClient:
     def _listen(
         self,
         cb: Callable[[MsgFormat, str, Msg], None],
-        offset: OffsetType = OffsetType.EARLIEST,
+        offset: OffsetType = "earliest",
         primary: bool = True,
         command: bool = False,
         talk: bool = False,
@@ -129,9 +125,7 @@ class KBeastClient:
         consumer.close()
         return self._build_nested_dict(alarm_list)
 
-    def _create_consumer(
-        self, enable_eof: bool, offset: OffsetType = OffsetType.EARLIEST
-    ):
+    def _create_consumer(self, enable_eof: bool, offset: OffsetType = "earliest"):
         return Consumer(
             {
                 "bootstrap.servers": self.server,

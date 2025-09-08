@@ -4,7 +4,7 @@ from pprint import pprint
 
 import click
 
-from kbeastpy import KBeastClient, LogReader, OffsetType
+from kbeastpy import KBeastClient, LogReader
 from kbeastpy.msg import Msg, MsgFormat
 
 
@@ -36,7 +36,7 @@ def list(config, server):
 @click.option("--latest", "-l", type=bool, default=False, help="Set offset latest")
 def listen(config, server, primary, command, talk, latest):
     c = KBeastClient(config=config, server=server)
-    offset = OffsetType.LATEST if latest else OffsetType.EARLIEST
+    offset = "latest" if latest else "earliest"
     c.start_listner(cb=cb, offset=offset, primary=primary, command=command, talk=talk)
     try:
         while True:
