@@ -1,6 +1,6 @@
 import time
 from datetime import datetime
-from pprint import pprint
+from pprint import pformat
 from typing import List
 
 import click
@@ -21,9 +21,12 @@ def cli():
 @click.option(
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
-def list(config, server):
+@click.option("--pprint", "-p", is_flag=True, help="Print more output.")
+def list(config, server, pprint):
     c = KBeastClient(config=config, server=server)
     alarms = c.fetch_alarm_list()
+    if pprint:
+        alarms = pformat(alarms)
     click.echo(alarms)
 
 
@@ -114,7 +117,8 @@ def cb(msg_fmt: MsgFormat, key: str, value: Msg):
 @click.option("--systems", "-g", type=str, default=None, help="Systems")
 @click.option("--pv", "-p", type=str, default=None, help="PV name pattern")
 @click.option("--severity", "-r", type=str, default=None, help="Severity list")
-def log(config, server, start, end, systems, pv, severity):
+@click.option("--pprint", "-n", is_flag=True, help="Print more output.")
+def log(config, server, start, end, systems, pv, severity, pprint):
     _end = end
     if _end is None:
         now = datetime.now()
@@ -125,7 +129,9 @@ def log(config, server, start, end, systems, pv, severity):
     r = LogReader(config=config, server=server)
     data = r.fetch_log(start, _end, system_list, pv, severity_list)
 
-    pprint(data)
+    if pprint:
+        data = pformat(data)
+    click.echo(data)
 
 
 if __name__ == "__main__":
