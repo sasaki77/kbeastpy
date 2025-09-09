@@ -88,7 +88,9 @@ class KBeastClient:
             # For mock test
             pass
 
-    def fetch_alarm_list(self) -> dict:
+    def fetch_alarm_list(
+        self, systems: list[str] | None = None, enabled: bool | None = None
+    ) -> dict:
         consumer = self._create_consumer(enable_eof=True)
         topic = self.config
 
@@ -136,7 +138,26 @@ class KBeastClient:
                 alarm_list[key] = value
 
         consumer.close()
-        return self._build_config_dict(alarm_list)
+
+        alarm_list_filtered = {}
+        for key, value in alarm_list.items():
+            if value is None or "delete" in value:
+                continue
+            if enabled is not None and value.get("enabled", True) != enabled:
+                continue
+
+            system_match = False
+            if systems is not None:
+                for system in systems:
+                    if key.startswith(f"config:/{self.config}/{system}"):
+                        system_match = True
+                        break
+                if not system_match:
+                    continue
+
+            alarm_list_filtered[key] = value
+
+        return self._build_config_dict(alarm_list_filtered)
 
     def update_alarm_config(self, configs: list[AlarmConfigArg]):
         producer = self._create_producer()
@@ -224,13 +245,11 @@ class KBeastClient:
         value = json.loads(msg.value())
         return key, value
 
-    def _build_config_dict(self, alarm_list: dict[str, ConfigMsg]) -> dict:
+    def _build_config_dict(
+        self, alarm_list: dict[str, ConfigLeafMsg | ConfigNodeMsg]
+    ) -> dict:
         result = {"childs": {}}
         for key, value in alarm_list.items():
-            # ignore delete message
-            if value is None or "delete" in value:
-                continue
-
             keys = key[8:].split("/")[1:]
             last = len(keys) - 1
             current = result

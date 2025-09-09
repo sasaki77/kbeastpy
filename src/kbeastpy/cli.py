@@ -22,9 +22,14 @@ def cli():
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
 @click.option("--pprint", "-p", is_flag=True, help="Print more output.")
-def list(config, server, pprint):
+@click.option("--systems", "-g", type=str, default=None, help="Systems")
+@click.option("--enabled", "-e", type=bool, default=None, help="Enabled")
+def list(config, server, pprint, systems, enabled):
     c = KBeastClient(config=config, server=server)
-    alarms = c.fetch_alarm_list()
+    _systems = None
+    if systems:
+        _systems = systems.split(",")
+    alarms = c.fetch_alarm_list(_systems, enabled)
     if pprint:
         alarms = pformat(alarms)
     click.echo(alarms)
