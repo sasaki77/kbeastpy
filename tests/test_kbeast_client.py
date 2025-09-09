@@ -169,19 +169,39 @@ def test_delete(mock_producer):
                     {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
                 config_node_elem("Accelerator/Group1"),
+                config_node_elem("Accelerator/Group1/Group1-1"),
+                config_leaf_elem(
+                    "Accelerator/Group1/Group1-1/alarm2",
+                    {"user": "root", "host": "test", "description": "Alarm 2"},
+                ),
                 # EOF messages for 2 partitions
                 eof_message(),
                 eof_message(),
             ],
             {
                 "Group1": {
-                    "alarm1": {
-                        "user": "root",
-                        "host": "test",
-                        "description": "Alarm 1",
+                    "user": "root",
+                    "host": "test",
+                    "childs": {
+                        "alarm1": {
+                            "user": "root",
+                            "host": "test",
+                            "description": "Alarm 1",
+                        },
+                        "Group1-1": {
+                            "user": "root",
+                            "host": "test",
+                            "childs": {
+                                "alarm2": {
+                                    "user": "root",
+                                    "host": "test",
+                                    "description": "Alarm 2",
+                                },
+                            },
+                        },
                     },
                 },
-                "Group2": {},
+                "Group2": {"user": "root", "host": "test", "childs": {}},
             },
         ),
     ],

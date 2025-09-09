@@ -50,7 +50,7 @@ class KBeastClient:
         talk: bool = False,
     ):
         consumer = self._create_consumer(enable_eof=False, offset=offset)
-        topics = self._get_topic_names(self.config, primary, command, talk)
+        topics = self._get_topic_names(primary, command, talk)
 
         if len(topics) == 0:
             return
@@ -101,6 +101,7 @@ class KBeastClient:
         partitions = metadata.topics[topic].partitions
         consumer.subscribe([topic])
 
+        # alama_list keeps the last message for each key
         alarm_list = {}
         eof_count = 0
 
@@ -135,7 +136,7 @@ class KBeastClient:
                 alarm_list[key] = value
 
         consumer.close()
-        return self._build_nested_dict(alarm_list)
+        return self._build_config_dict(alarm_list)
 
     def update_alarm_config(self, configs: list[AlarmConfigArg]):
         producer = self._create_producer()
@@ -223,27 +224,33 @@ class KBeastClient:
         value = json.loads(msg.value())
         return key, value
 
-    def _build_nested_dict(self, alarm_list: dict[str, ConfigMsg]) -> dict:
-        result = {}
+    def _build_config_dict(self, alarm_list: dict[str, ConfigMsg]) -> dict:
+        result = {"childs": {}}
         for key, value in alarm_list.items():
-            if value is None:
-                continue
-
-            if "delete" in value:
+            # ignore delete message
+            if value is None or "delete" in value:
                 continue
 
             keys = key[8:].split("/")[1:]
+            last = len(keys) - 1
             current = result
-            for i, k in enumerate(keys):
-                if i == len(keys) - 1:
-                    if "description" in value:
-                        current[k] = value
-                        continue
-                    if k not in current:
-                        current[k] = {}
-                else:
-                    current = current.setdefault(k, {})
-        return result
+
+            for i, key in enumerate(keys):
+                if i != last:
+                    current = current["childs"].setdefault(key, {"childs": {}})
+                    continue
+
+                # leaf
+                if "description" in value:
+                    current["childs"][key] = value
+                    continue
+
+                # node
+                if key not in current["childs"]:
+                    current["childs"][key] = {"childs": {}}
+                current["childs"][key].update(value)
+
+        return result["childs"]
 
     def _analyze_msg_format(self, key: str, value: Msg) -> MsgFormat | None:
         if key.startswith("state"):
@@ -270,9 +277,7 @@ class KBeastClient:
 
         return None
 
-    def _get_topic_names(
-        self, config: str, primary: bool, command: bool, talk: bool
-    ) -> list[str]:
+    def _get_topic_names(self, primary: bool, command: bool, talk: bool) -> list[str]:
         names = []
 
         if primary:
