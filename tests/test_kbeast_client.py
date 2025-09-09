@@ -224,6 +224,144 @@ def test_fetch_alarm_list(mock_consumer, expected):
                     {"user": "root", "host": "test", "description": "Alarm 1"},
                 ),
                 config_node_elem("Accelerator/Group1"),
+                config_node_elem("Accelerator/Group1/Group1-1"),
+                config_leaf_elem(
+                    "Accelerator/Group1/Group1-1/alarm2",
+                    {"user": "root", "host": "test", "description": "Alarm 2"},
+                ),
+                config_node_elem("Accelerator/Group2"),
+                config_leaf_elem(
+                    "Accelerator/Group2/alarm3",
+                    {"user": "root", "host": "test", "description": "Alarm 3"},
+                ),
+                # EOF messages for 2 partitions
+                eof_message(),
+                eof_message(),
+            ],
+            {
+                "Group1": {
+                    "childs": {
+                        "Group1-1": {
+                            "user": "root",
+                            "host": "test",
+                            "childs": {
+                                "alarm2": {
+                                    "user": "root",
+                                    "host": "test",
+                                    "description": "Alarm 2",
+                                },
+                            },
+                        },
+                    },
+                },
+                "Group2": {
+                    "user": "root",
+                    "host": "test",
+                    "childs": {
+                        "alarm3": {
+                            "user": "root",
+                            "host": "test",
+                            "description": "Alarm 3",
+                        },
+                    },
+                },
+            },
+        ),
+    ],
+    indirect=["mock_consumer"],
+)
+def test_fetch_alarm_list_with_systems(mock_consumer, expected):
+    client = KBeastClient()
+    result = client.fetch_alarm_list(systems=["Group1/Group1-1", "Group2"])
+
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("mock_consumer", "enabled", "expected"),
+    [
+        (
+            [
+                config_leaf_elem(
+                    "Accelerator/alarm1",
+                    {"user": "root", "host": "test", "description": "Alarm 1"},
+                ),
+                config_leaf_elem(
+                    "Accelerator/alarm2",
+                    {
+                        "user": "root",
+                        "host": "test",
+                        "description": "Alarm 2",
+                        "enabled": False,
+                    },
+                ),
+                config_leaf_elem(
+                    "Accelerator/alarm3",
+                    {
+                        "user": "root",
+                        "host": "test",
+                        "description": "Alarm 3",
+                        "enabled": True,
+                    },
+                ),
+                # EOF messages for 2 partitions
+                eof_message(),
+                eof_message(),
+            ],
+            True,
+            2,
+        ),
+        (
+            [
+                config_leaf_elem(
+                    "Accelerator/alarm1",
+                    {"user": "root", "host": "test", "description": "Alarm 1"},
+                ),
+                config_leaf_elem(
+                    "Accelerator/alarm2",
+                    {
+                        "user": "root",
+                        "host": "test",
+                        "description": "Alarm 2",
+                        "enabled": False,
+                    },
+                ),
+                config_leaf_elem(
+                    "Accelerator/alarm3",
+                    {
+                        "user": "root",
+                        "host": "test",
+                        "description": "Alarm 3",
+                        "enabled": True,
+                    },
+                ),
+                # EOF messages for 2 partitions
+                eof_message(),
+                eof_message(),
+            ],
+            False,
+            1,
+        ),
+    ],
+    indirect=["mock_consumer"],
+)
+def test_fetch_alarm_list_with_enabled(mock_consumer, enabled, expected):
+    client = KBeastClient()
+    result = client.fetch_alarm_list(enabled=enabled)
+
+    assert len(result) == expected
+
+
+@pytest.mark.parametrize(
+    ("mock_consumer", "expected"),
+    [
+        (
+            [
+                config_leaf_elem(
+                    "Accelerator/alarm1",
+                    {"user": "root", "host": "test", "description": "Alarm 1"},
+                ),
+                config_node_elem("Accelerator/Group1"),
                 config_leaf_elem(
                     "Accelerator/Group1/alarm2",
                     {"user": "root", "host": "test", "description": "Alarm 2"},
