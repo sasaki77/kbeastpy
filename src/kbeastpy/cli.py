@@ -21,16 +21,16 @@ def cli():
 @click.option(
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
-@click.option("--pprint", "-p", is_flag=True, help="Print more output.")
+@click.option("--pretty", "-p", is_flag=True, help="Print more output.")
 @click.option("--systems", "-g", type=str, default=None, help="Systems")
 @click.option("--enabled", "-e", type=bool, default=None, help="Enabled")
-def list(config, server, pprint, systems, enabled):
+def list(config, server, pretty, systems, enabled):
     c = KBeastClient(config=config, server=server)
     _systems = None
     if systems:
         _systems = systems.split(",")
     alarms = c.fetch_alarm_list(_systems, enabled)
-    if pprint:
+    if pretty:
         alarms = pformat(alarms)
     click.echo(alarms)
 
@@ -82,7 +82,7 @@ def delete(config, server, path, user, host):
 @click.option("--primary", "-p", type=bool, default=True, help="Enale primary topic")
 @click.option("--command", "-m", type=bool, default=False, help="Enale command topic")
 @click.option("--talk", "-t", type=bool, default=False, help="Enale talk topic")
-@click.option("--latest", "-l", type=bool, default=False, help="Set offset latest")
+@click.option("--latest", "-l", is_flag=True, help="Set offset latest")
 def listen(config, server, primary, command, talk, latest):
     c = KBeastClient(config=config, server=server)
     offset = "latest" if latest else "earliest"
@@ -115,15 +115,19 @@ def cb(msg_fmt: MsgFormat, key: str, value: Msg):
 @cli.command()
 @click.option("--config", "-c", type=str, default="Accelerator", help="Alarm topic")
 @click.option(
-    "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
+    "--server",
+    "-s",
+    type=str,
+    default="http://127.0.0.1:9200",
+    help="IP for Elastisearch",
 )
 @click.option("--start", "-t", type=str, help="Start of search range", required=True)
 @click.option("--end", "-e", type=str, help="End of search range")
 @click.option("--systems", "-g", type=str, default=None, help="Systems")
-@click.option("--pv", "-p", type=str, default=None, help="PV name pattern")
+@click.option("--pv", "-p", type=str, default=None, help="PV name pattern (regex)")
 @click.option("--severity", "-r", type=str, default=None, help="Severity list")
-@click.option("--pprint", "-n", is_flag=True, help="Print more output.")
-def log(config, server, start, end, systems, pv, severity, pprint):
+@click.option("--pretty", "-n", is_flag=True, help="Print more output.")
+def log(config, server, start, end, systems, pv, severity, pretty):
     _end = end
     if _end is None:
         now = datetime.now()
@@ -134,7 +138,7 @@ def log(config, server, start, end, systems, pv, severity, pprint):
     r = LogReader(config=config, server=server)
     data = r.fetch_log(start, _end, system_list, pv, severity_list)
 
-    if pprint:
+    if pretty:
         data = pformat(data)
     click.echo(data)
 
