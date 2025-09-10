@@ -36,4 +36,4 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      - run: uv run --locked tox run -e ${{ matrix.tox || matrix.python }}
+      - run: uv run --locked tox run -e ${{ matrix.python }}
