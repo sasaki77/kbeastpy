@@ -450,7 +450,7 @@ def test_listener(mock_consumer, expected):
         data.append((msg_fmt, key, value))
 
     client = KBeastClient()
-    client.start_listner(cb=cb)
+    client.start_listener(cb=cb)
     time.sleep(1)
 
     assert len(expected) == len(data)

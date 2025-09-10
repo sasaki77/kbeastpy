@@ -29,7 +29,7 @@ class KBeastClient:
         self.server = server
         self.stop_listen = False
 
-    def start_listner(
+    def start_listener(
         self,
         cb: Callable[[MsgFormat, str, Msg], None],
         offset: OffsetType = "earliest",

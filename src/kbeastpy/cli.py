@@ -86,7 +86,7 @@ def delete(config, server, path, user, host):
 def listen(config, server, primary, command, talk, latest):
     c = KBeastClient(config=config, server=server)
     offset = "latest" if latest else "earliest"
-    c.start_listner(cb=cb, offset=offset, primary=primary, command=command, talk=talk)
+    c.start_listener(cb=cb, offset=offset, primary=primary, command=command, talk=talk)
     try:
         while True:
             time.sleep(1)
