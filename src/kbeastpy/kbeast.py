@@ -27,6 +27,7 @@ class KBeastClient:
     def __init__(self, config: str = "Accelerator", server: str = "127.0.0.1:29092"):
         self.config = config
         self.server = server
+        self.stop_listen = False
 
     def start_listner(
         self,
@@ -40,6 +41,9 @@ class KBeastClient:
             target=self._listen, daemon=True, args=(cb, offset, primary, command, talk)
         )
         thread.start()
+
+    def stop_listener(self):
+        self.stop_listen = True
 
     def _listen(
         self,
@@ -66,6 +70,10 @@ class KBeastClient:
 
         try:
             while True:
+                if self.stop_listen:
+                    self.stop_listen = False
+                    break
+
                 msg = consumer.poll(timeout=1.0)
 
                 if not self._is_valid_message(msg):
