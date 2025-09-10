@@ -124,10 +124,7 @@ class KBeastClient:
                     eof_count += 1
                     if eof_count >= len(partitions):
                         break
-                    continue
-                else:
-                    print("Error:", msg.error())
-                    continue
+                continue
 
             if not self._is_valid_message(msg):
                 continue
@@ -173,14 +170,10 @@ class KBeastClient:
             value = json.dumps(config["data"])
 
             try:
-                producer.produce(
-                    topic, key=key, value=value, callback=self._produce_delivery_report
-                )
+                producer.produce(topic, key=key, value=value)
             except BufferError:
                 producer.poll(1)  # wait buffer becomes available
-                producer.produce(
-                    topic, key=key, value=value, callback=self._produce_delivery_report
-                )
+                producer.produce(topic, key=key, value=value)
             producer.poll(0)
 
         producer.flush()
@@ -196,32 +189,20 @@ class KBeastClient:
             key = f"config:/{self.config}/{path}"
 
             try:
-                producer.produce(
-                    topic, key=key, value=value, callback=self._produce_delivery_report
-                )
+                producer.produce(topic, key=key, value=value)
             except BufferError:
                 producer.poll(1)  # wait buffer becomes available
-                producer.produce(
-                    topic, key=key, value=value, callback=self._produce_delivery_report
-                )
+                producer.produce(topic, key=key, value=value)
             producer.poll(0)
 
             try:
-                producer.produce(
-                    topic, key=key, value=None, callback=self._produce_delivery_report
-                )
+                producer.produce(topic, key=key, value=None)
             except BufferError:
                 producer.poll(1)  # wait buffer becomes available
-                producer.produce(
-                    topic, key=key, value=None, callback=self._produce_delivery_report
-                )
+                producer.produce(topic, key=key, value=None)
             producer.poll(0)
 
         producer.flush()
-
-    def _produce_delivery_report(self, err, msg):
-        if err is not None:
-            print(f"Delivery failed: {err}")
 
     def _create_consumer(self, enable_eof: bool, offset: OffsetType = "earliest"):
         return Consumer(
