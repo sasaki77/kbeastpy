@@ -62,9 +62,10 @@ class KBeastClient:
         metadata = consumer.list_topics(timeout=5)
         for topic in topics:
             if topic not in metadata.topics:
-                print(f"Topic '{topic}' not found.")
                 consumer.close()
-                return {}
+                raise RuntimeError(
+                    f"Kafka topic '{topic}' not found. Check if the topic exists and is accessible."
+                )
 
         consumer.subscribe(topics)
 
@@ -100,9 +101,10 @@ class KBeastClient:
 
         metadata = consumer.list_topics(topic, timeout=5)
         if topic not in metadata.topics:
-            print(f"Topic '{topic}' not found.")
             consumer.close()
-            return {}
+            raise RuntimeError(
+                f"Kafka topic '{topic}' not found. Check if the topic exists and is accessible."
+            )
 
         partitions = metadata.topics[topic].partitions
         consumer.subscribe([topic])
