@@ -5,8 +5,8 @@ from typing import List
 
 import click
 
-from kbeastpy import KBeastClient, LogReader
-from kbeastpy.kbeast import AlarmConfigArg
+from kbeastpy.kbeast import AlarmConfigArg, KBeastClient
+from kbeastpy.logreader import LogReader
 from kbeastpy.msg import Msg, MsgFormat
 
 

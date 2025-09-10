@@ -1,6 +1,6 @@
 import pytest
 
-from kbeastpy import LogReader
+from kbeastpy.logreader import LogReader
 
 
 @pytest.fixture

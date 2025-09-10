@@ -13,8 +13,7 @@ from utils import (
     talk_elem,
 )
 
-from kbeastpy import KBeastClient
-from kbeastpy.kbeast import AlarmConfigArg
+from kbeastpy.kbeast import AlarmConfigArg, KBeastClient
 from kbeastpy.msg import Msg, MsgFormat
 
 
