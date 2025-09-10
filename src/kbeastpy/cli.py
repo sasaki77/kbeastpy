@@ -97,8 +97,8 @@ def listen(config, server, primary, command, talk, latest):
 cb_prefix = {
     MsgFormat.CONFIG_LEAF: "config",
     MsgFormat.CONFIG_NODE: "config",
-    MsgFormat.CONFIG_NONE: "config",
-    MsgFormat.DELETE: "delete",
+    MsgFormat.DELETE_NOTIFY: "config",
+    MsgFormat.DELETE_TOMBSTONE: "config",
     MsgFormat.STATE_LEAF: "state",
     MsgFormat.STATE_NODE: "state",
     MsgFormat.COMMAND: "command",

@@ -6,7 +6,8 @@ from utils import (
     command_elem,
     config_leaf_elem,
     config_node_elem,
-    delete_elem,
+    delete_notify_elem,
+    delete_tombstone_elem,
     eof_message,
     state_leaf_elem,
     state_node_elem,
@@ -153,7 +154,8 @@ def test_delete(mock_producer):
                     "Accelerator/alarm2",
                     {"user": "root", "host": "test", "description": "Alarm 2"},
                 ),
-                delete_elem("Accelerator/alarm2"),
+                delete_notify_elem("Accelerator/alarm2"),
+                delete_tombstone_elem("Accelerator/alarm2"),
                 # EOF messages for 2 partitions
                 eof_message(),
                 eof_message(),
@@ -379,7 +381,8 @@ def test_fetch_alarm_list_with_enabled(mock_consumer, enabled, expected):
                 state_node_elem("Accelerator/Group1", "MAJOR"),
                 talk_elem("Accelerator/alarm1", "MAJOR", "Alarm 1"),
                 command_elem("Accelerator/Group1/alarm2"),
-                delete_elem("Accelerator/Group1/alarm2"),
+                delete_notify_elem("Accelerator/Group1/alarm2"),
+                delete_tombstone_elem("Accelerator/Group1/alarm2"),
             ],
             [
                 {
@@ -433,9 +436,14 @@ def test_fetch_alarm_list_with_enabled(mock_consumer, enabled, expected):
                     },
                 },
                 {
-                    "msg_fmt": MsgFormat.DELETE,
+                    "msg_fmt": MsgFormat.DELETE_NOTIFY,
                     "key": "Accelerator/Group1/alarm2",
                     "value": {"user": "root", "host": "test", "delete": "Deleting"},
+                },
+                {
+                    "msg_fmt": MsgFormat.DELETE_TOMBSTONE,
+                    "key": "Accelerator/Group1/alarm2",
+                    "value": None,
                 },
             ],
         ),

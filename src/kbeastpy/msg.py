@@ -5,8 +5,8 @@ from typing import NotRequired, TypedDict, Union
 class MsgFormat(Enum):
     CONFIG_LEAF = auto()
     CONFIG_NODE = auto()
-    CONFIG_NONE = auto()
-    DELETE = auto()
+    DELETE_NOTIFY = auto()
+    DELETE_TOMBSTONE = auto()
     STATE_LEAF = auto()
     STATE_NODE = auto()
     COMMAND = auto()

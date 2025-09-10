@@ -46,12 +46,21 @@ def state_node_elem(key: str, severity: str = "MAJOR") -> MagicMock:
     )
 
 
-def delete_elem(key: str) -> MagicMock:
+def delete_notify_elem(key: str) -> MagicMock:
     return MagicMock(
         key=lambda: f"config:/{key}".encode("utf-8"),
         value=lambda: json.dumps(
             {"user": "root", "host": "test", "delete": "Deleting"}
         ).encode("utf-8"),
+        topic=lambda: CONFIG,
+        error=lambda: None,
+    )
+
+
+def delete_tombstone_elem(key: str) -> MagicMock:
+    return MagicMock(
+        key=lambda: f"config:/{key}".encode("utf-8"),
+        value=lambda: None,
         topic=lambda: CONFIG,
         error=lambda: None,
     )

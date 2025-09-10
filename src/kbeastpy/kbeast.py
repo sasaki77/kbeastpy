@@ -80,10 +80,6 @@ class KBeastClient:
                     continue
 
                 key, value = self._parse_key_value(msg)
-
-                if key is None:
-                    continue
-
                 msg_fmt = self._analyze_msg_format(key, value)
 
                 if msg_fmt is None:
@@ -136,9 +132,6 @@ class KBeastClient:
 
             key, value = self._parse_key_value(msg)
 
-            if key is None:
-                continue
-
             if not key.startswith("config"):
                 continue
 
@@ -149,8 +142,10 @@ class KBeastClient:
 
         alarm_list_filtered = {}
         for key, value in alarm_list.items():
-            if value is None or "delete" in value:
+            msg_fmt = self._analyze_msg_format(key, value)
+            if msg_fmt not in [MsgFormat.CONFIG_LEAF, MsgFormat.CONFIG_NODE]:
                 continue
+
             if enabled is not None and value.get("enabled", True) != enabled:
                 continue
 
@@ -246,11 +241,14 @@ class KBeastClient:
     def _is_valid_message(self, msg) -> bool:
         if msg is None or msg.error():
             return False
-        return msg.key() is not None and msg.value() is not None
+        return msg.key() is not None
 
-    def _parse_key_value(self, msg) -> tuple[str | None, ConfigMsg]:
+    def _parse_key_value(self, msg) -> tuple[str, ConfigMsg]:
         key = msg.key().decode("utf-8")
-        value = json.loads(msg.value())
+
+        _val = msg.value()
+        value = json.loads(msg.value()) if _val else None
+
         return key, value
 
     def _build_config_dict(
@@ -289,9 +287,9 @@ class KBeastClient:
 
         if key.startswith("config"):
             if value is None:
-                return MsgFormat.CONFIG_NONE
+                return MsgFormat.DELETE_TOMBSTONE
             if "delete" in value:
-                return MsgFormat.DELETE
+                return MsgFormat.DELETE_NOTIFY
             if "description" in value:
                 return MsgFormat.CONFIG_LEAF
             return MsgFormat.CONFIG_NODE
@@ -324,7 +322,6 @@ class KBeastClient:
     @lru_cache
     def _get_prefix_length_dict(self):
         config_len = len("config:/")
-        delete_len = len("delete:/")
         state_len = len("state:/")
         command_len = len("command:/")
         talk_len = len("talk:/")
@@ -332,8 +329,8 @@ class KBeastClient:
         return {
             MsgFormat.CONFIG_LEAF: config_len,
             MsgFormat.CONFIG_NODE: config_len,
-            MsgFormat.CONFIG_NONE: config_len,
-            MsgFormat.DELETE: delete_len,
+            MsgFormat.DELETE_NOTIFY: config_len,
+            MsgFormat.DELETE_TOMBSTONE: config_len,
             MsgFormat.STATE_LEAF: state_len,
             MsgFormat.STATE_NODE: state_len,
             MsgFormat.COMMAND: command_len,
