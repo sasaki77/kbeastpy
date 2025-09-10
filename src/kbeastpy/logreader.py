@@ -2,8 +2,7 @@ from typing import Literal, TypedDict
 
 from elasticsearch import Elasticsearch
 
-Severity = Literal["MAJOR", "MINOR", "UNDEFINED", "INVALID"]
-SeverityList = list[Severity]
+Severity = Literal["OK", "MAJOR", "MINOR", "UNDEFINED", "INVALID"]
 
 
 class LogData(TypedDict):
@@ -34,7 +33,7 @@ class LogReader(object):
         end: str,
         systems: list[str] | None = None,
         pv_pattern: str | None = None,
-        severity_list: SeverityList | None = None,
+        severity_list: list[Severity] | None = None,
     ) -> list[LogData]:
         es = Elasticsearch(self.server)
 
@@ -78,7 +77,7 @@ class LogReader(object):
         end: str,
         systems: list[str] | None = None,
         pv_pattern: str | None = None,
-        severity_list: SeverityList | None = None,
+        severity_list: list[Severity] | None = None,
     ) -> dict:
         must = []
 
