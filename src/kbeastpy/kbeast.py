@@ -62,7 +62,7 @@ class KBeastClient:
         topics = self._get_topic_names(primary, command, talk)
 
         if len(topics) == 0:
-            return
+            raise ValueError("there is no topic to listen.")
 
         metadata = consumer.list_topics(timeout=5)
         for topic in topics:
