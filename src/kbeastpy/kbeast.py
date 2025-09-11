@@ -18,6 +18,10 @@ from kbeastpy.msg import (
 OffsetType = Literal["earliest", "latest"]
 
 
+class ConfigTreeNode(ConfigNodeMsg):
+    childs: dict[str, Union["ConfigTreeNode", ConfigLeafMsg]]
+
+
 class AlarmConfigArg(TypedDict):
     path: str
     data: Union[ConfigLeafMsg, ConfigNodeMsg]
@@ -96,7 +100,7 @@ class KBeastClient:
 
     def fetch_alarm_list(
         self, systems: list[str] | None = None, enabled: bool | None = None
-    ) -> dict:
+    ) -> dict[str, Union[ConfigTreeNode, ConfigLeafMsg]]:
         consumer = self._create_consumer(enable_eof=True)
         topic = self.config
 
@@ -205,7 +209,9 @@ class KBeastClient:
 
         producer.flush()
 
-    def _create_consumer(self, enable_eof: bool, offset: OffsetType = "earliest"):
+    def _create_consumer(
+        self, enable_eof: bool, offset: OffsetType = "earliest"
+    ) -> Consumer:
         return Consumer(
             {
                 "bootstrap.servers": self.server,
@@ -215,7 +221,7 @@ class KBeastClient:
             }
         )
 
-    def _create_producer(self):
+    def _create_producer(self) -> Producer:
         return Producer(
             {
                 "bootstrap.servers": self.server,
@@ -237,7 +243,7 @@ class KBeastClient:
 
     def _build_config_dict(
         self, alarm_list: dict[str, ConfigLeafMsg | ConfigNodeMsg]
-    ) -> dict:
+    ) -> dict[str, Union[ConfigTreeNode, ConfigLeafMsg]]:
         result = {"childs": {}}
         for key, value in alarm_list.items():
             keys = key[8:].split("/")[1:]
@@ -298,13 +304,13 @@ class KBeastClient:
 
         return names
 
-    def _strip_type_prefix(self, key, msg_fmt):
+    def _strip_type_prefix(self, key: str, msg_fmt: MsgFormat) -> str:
         length_dit = self._get_prefix_length_dict()
         length = length_dit[msg_fmt]
         return key[length:]
 
     @lru_cache
-    def _get_prefix_length_dict(self):
+    def _get_prefix_length_dict(self) -> dict[MsgFormat, int]:
         config_len = len("config:/")
         state_len = len("state:/")
         command_len = len("command:/")
