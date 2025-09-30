@@ -5,7 +5,7 @@ from typing import List
 
 import click
 
-from kbeastpy.kbeast import AlarmConfigArg, KBeastClient
+from kbeastpy.kbeast import AlarmConfig, KBeastClient
 from kbeastpy.logreader import LogReader
 from kbeastpy.msg import Msg, MsgFormat
 
@@ -47,16 +47,16 @@ def list(config, server, pretty, systems, enabled):
 @click.option("--enabled", "-e", type=bool, default=True, help="Enabled")
 def update(config, server, path, user, host, desc, enabled):
     c = KBeastClient(config=config, server=server)
-    configs: List[AlarmConfigArg] = [
-        {
-            "path": path,
-            "data": {
+    configs: List[AlarmConfig] = [
+        AlarmConfig(
+            path=path,
+            config={
                 "user": user,
                 "host": host,
                 "description": desc,
                 "enabled": enabled,
             },
-        }
+        )
     ]
     c.update_alarm_config(configs)
 

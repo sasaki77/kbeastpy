@@ -1,5 +1,7 @@
 from enum import Enum, auto
-from typing import NotRequired, TypedDict, Union
+from typing import NotRequired, Union
+
+from typing_extensions import TypedDict
 
 
 class MsgFormat(Enum):

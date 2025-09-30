@@ -2,9 +2,10 @@ import json
 import threading
 import uuid
 from functools import lru_cache
-from typing import Callable, Literal, TypedDict, Union
+from typing import Callable, Literal, Union
 
 from confluent_kafka import Consumer, KafkaError, Producer
+from pydantic import BaseModel
 
 from kbeastpy.msg import (
     ConfigLeafMsg,
@@ -22,9 +23,9 @@ class ConfigTreeNode(ConfigNodeMsg):
     childs: dict[str, Union["ConfigTreeNode", ConfigLeafMsg]]
 
 
-class AlarmConfigArg(TypedDict):
+class AlarmConfig(BaseModel):
     path: str
-    data: Union[ConfigLeafMsg, ConfigNodeMsg]
+    config: Union[ConfigLeafMsg, ConfigNodeMsg]
 
 
 class KBeastClient:
@@ -166,13 +167,13 @@ class KBeastClient:
 
         return self._build_config_dict(alarm_list_filtered)
 
-    def update_alarm_config(self, configs: list[AlarmConfigArg]):
+    def update_alarm_config(self, configs: list[AlarmConfig]):
         producer = self._create_producer()
         topic = self.config
 
         for config in configs:
-            key = f"config:/{self.config}/{config['path']}"
-            value = json.dumps(config["data"])
+            key = f"config:/{self.config}/{config.path}"
+            value = json.dumps(config.config)
 
             try:
                 producer.produce(topic, key=key, value=value)

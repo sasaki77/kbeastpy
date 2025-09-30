@@ -1,6 +1,6 @@
 import time
 
-from kbeastpy.kbeast import AlarmConfigArg, KBeastClient
+from kbeastpy.kbeast import AlarmConfig, KBeastClient
 from kbeastpy.msg import Msg, MsgFormat
 
 # Create instance of KBeastClient
@@ -10,37 +10,37 @@ server = "kafka:29092"
 client = KBeastClient(config, server)
 
 # Update configuration of alarm tree
-configs: list[AlarmConfigArg] = [
-    {
-        "path": "TEST:PV1",
-        "data": {
+configs: list[AlarmConfig] = [
+    AlarmConfig(
+        path="TEST:PV1",
+        config={
             "user": "sasaki",
             "host": "host",
             "description": "Alarm 1",
         },
-    },
-    {
-        "path": "Group1",
-        "data": {
+    ),
+    AlarmConfig(
+        path="Group1",
+        config={
             "user": "sasaki",
             "host": "host",
         },
-    },
-    {
-        "path": "Group1/Group1-1",
-        "data": {
+    ),
+    AlarmConfig(
+        path="Group1/Group1-1",
+        config={
             "user": "sasaki",
             "host": "host",
         },
-    },
-    {
-        "path": "Group1/Group1-1/TEST:PV2",
-        "data": {
+    ),
+    AlarmConfig(
+        path="Group1/Group1-1/TEST:PV2",
+        config={
             "user": "sasaki",
             "host": "host",
             "description": "Alarm 2",
         },
-    },
+    ),
 ]
 client.update_alarm_config(configs)
 

@@ -14,7 +14,7 @@ from utils import (
     talk_elem,
 )
 
-from kbeastpy.kbeast import AlarmConfigArg, KBeastClient
+from kbeastpy.kbeast import AlarmConfig, KBeastClient
 from kbeastpy.msg import Msg, MsgFormat
 
 
@@ -53,23 +53,23 @@ def mock_producer(mocker):
 
 def test_update(mock_producer):
     _, mock = mock_producer
-    configs: list[AlarmConfigArg] = [
-        {
-            "path": "PV1",
-            "data": {
+    configs: list[AlarmConfig] = [
+        AlarmConfig(
+            path="PV1",
+            config={
                 "user": "user",
                 "host": "host",
                 "description": "desc",
                 "enabled": True,
             },
-        },
-        {
-            "path": "Group1",
-            "data": {
+        ),
+        AlarmConfig(
+            path="Group1",
+            config={
                 "user": "user",
                 "host": "host",
             },
-        },
+        ),
     ]
 
     client = KBeastClient()
@@ -83,13 +83,13 @@ def test_update(mock_producer):
     call1_kargs = calls[0][1]
     assert call1_args == ("Accelerator",)
     assert call1_kargs["key"] == "config:/Accelerator/PV1"
-    assert call1_kargs["value"] == json.dumps(configs[0]["data"])
+    assert call1_kargs["value"] == json.dumps(configs[0].config)
 
     call2_args = calls[1][0]
     call2_kargs = calls[1][1]
     assert call2_args == ("Accelerator",)
     assert call2_kargs["key"] == "config:/Accelerator/Group1"
-    assert call2_kargs["value"] == json.dumps(configs[1]["data"])
+    assert call2_kargs["value"] == json.dumps(configs[1].config)
 
 
 def test_delete(mock_producer):
