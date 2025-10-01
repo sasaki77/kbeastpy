@@ -21,9 +21,21 @@ def cli():
 @click.option(
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
-@click.option("--pretty", "-p", is_flag=True, help="Print more output.")
-@click.option("--systems", "-g", type=str, default=None, help="Systems")
-@click.option("--enabled", "-e", type=bool, default=None, help="Enabled")
+@click.option("--pretty", "-p", is_flag=True, help="Pretty print")
+@click.option(
+    "--systems",
+    "-g",
+    type=str,
+    default=None,
+    help="Comma-separated list of system names to filter alarm list",
+)
+@click.option(
+    "--enabled",
+    "-e",
+    type=bool,
+    default=None,
+    help="Filter alarm list by the enable state",
+)
 def list(config, server, pretty, systems, enabled):
     c = KBeastClient(config=config, server=server)
     _systems = None
@@ -79,9 +91,9 @@ def delete(config, server, path, user, host):
 @click.option(
     "--server", "-s", type=str, default="127.0.0.1:29092", help="IP for Kafka server"
 )
-@click.option("--primary", "-p", type=bool, default=True, help="Enale primary topic")
-@click.option("--command", "-m", type=bool, default=False, help="Enale command topic")
-@click.option("--talk", "-t", type=bool, default=False, help="Enale talk topic")
+@click.option("--primary", "-p", type=bool, default=True, help="Enable primary topic")
+@click.option("--command", "-m", type=bool, default=False, help="Enable command topic")
+@click.option("--talk", "-t", type=bool, default=False, help="Enable talk topic")
 @click.option("--latest", "-l", is_flag=True, help="Set offset latest")
 def listen(config, server, primary, command, talk, latest):
     c = KBeastClient(config=config, server=server)
@@ -123,10 +135,22 @@ def cb(msg_fmt: MsgFormat, key: str, value: Msg):
 )
 @click.option("--start", "-t", type=str, help="Start of search range", required=True)
 @click.option("--end", "-e", type=str, help="End of search range")
-@click.option("--systems", "-g", type=str, default=None, help="Systems")
-@click.option("--pv", "-p", type=str, default=None, help="PV name pattern (regex)")
+@click.option(
+    "--systems",
+    "-g",
+    type=str,
+    default=None,
+    help="Comma-separated list of system names to filter alarms",
+)
+@click.option(
+    "--pv",
+    "-p",
+    type=str,
+    default=None,
+    help="PV name pattern (regex) to filter alarms",
+)
 @click.option("--severity", "-r", type=str, default=None, help="Severity list")
-@click.option("--pretty", "-n", is_flag=True, help="Print more output.")
+@click.option("--pretty", "-n", is_flag=True, help="Pretty print")
 def log(config, server, start, end, systems, pv, severity, pretty):
     _end = end
     if _end is None:
